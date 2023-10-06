@@ -1,0 +1,37 @@
+log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for" ||| "$req_header" ||| "$resp_header" ||| "$resp_body"';
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    access_log /var/log/nginx_access.log main;
+    access_log /dev/stdout;
+    
+    location / {
+       proxy_buffering off;
+       proxy_pass https://REPLACEME.openai.azure.com;
+    }
+
+    set $req_header "";
+    set $resp_header "";
+    header_filter_by_lua_block {
+        local h = ngx.req.get_headers()
+        for k, v in pairs(h) do
+            -- ngx.log(ngx.CRIT, "Got Req header "..k..": "..v..";")
+            ngx.var.req_header = ngx.var.req_header .. k .. ": " .. v .. " | ";
+        end
+        local h2 = ngx.resp.get_headers()
+        for k2, v2 in pairs(h2) do
+            -- ngx.log(ngx.CRIT, "Got Resp header "..k2..": "..v2..";")
+            ngx.var.resp_header = ngx.var.resp_header .. k2 .. ": " .. v2 .. " | ";
+        end
+    }
+
+    set $resp_body "";
+    body_filter_by_lua_block {
+        -- ngx.log(ngx.CRIT,ngx.arg[1])
+        ngx.var.resp_body = ngx.var.resp_body .. " " .. ngx.arg[1];
+    } 
+}

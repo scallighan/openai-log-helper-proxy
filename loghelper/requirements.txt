@@ -1,0 +1,3 @@
+azure-eventhub
+azure-identity
+tiktoken
