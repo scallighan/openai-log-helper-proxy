@@ -153,16 +153,17 @@ def main():
             logger.info(resp_body_content)
             num_tokens = num_tokens_from_string(resp_body_content, 'cl100k_base')
             logger.info(f"Number of Tokens: {num_tokens}")
-            event = EventData(str({
-                "type": "openai-log-helper-proxy",
-                "req_headers": req_headers,
-                "resp_headers": resp_headers,
-                "body_content": resp_body_content,
-                "num_tokens": num_tokens,
-            }))
-            logger.info("---")
-            asyncio.run(send_to_event_hub(event))
-            logger.info(f"Event: {event}")
+            if num_tokens > 0:
+                event = EventData(str({
+                    "Type": "openai-log-helper-proxy",
+                    "req_headers": req_headers,
+                    "resp_headers": resp_headers,
+                    "body_content": resp_body_content,
+                    "num_tokens": num_tokens,
+                }))
+                logger.info("---")
+                asyncio.run(send_to_event_hub(event))
+                logger.info(f"Event: {event}")
             logger.info("-------------------------")
         except Exception as e:
             logging.error(f"Error in tailing: {e}")

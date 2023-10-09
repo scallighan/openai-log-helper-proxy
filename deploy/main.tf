@@ -15,6 +15,14 @@ terraform {
   }
 }
 
+provider "azurerm" {
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+
 locals {
   name = "oailoghelper${random_string.unique.result}"
   loc_for_naming = lower(replace(var.location, " ", ""))
@@ -60,9 +68,11 @@ resource "azurerm_linux_web_app" "this" {
   location            = azurerm_service_plan.this.location
   service_plan_id     = azurerm_service_plan.this.id
 
-  application_stack {
-    docker_image_name = "scallighan/openai-log-helper-proxy:latest"
-    docker_registry_url = "ghcr.io"
+  
+  site_config {
+    application_stack {
+        docker_image_name = "scallighan/openai-log-helper-proxy:latest"
+        docker_registry_url = "https://ghcr.io"
+    }
   }
-  site_config {}
 }

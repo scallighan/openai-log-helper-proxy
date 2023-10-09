@@ -9,9 +9,9 @@ server {
     access_log /var/log/nginx_access.log main;
     access_log /dev/stdout;
     
-    location / {
+    location /openai {
        proxy_buffering off;
-       proxy_pass $OPENAI_ENDPOINT;
+       proxy_pass $OPENAI_ENDPOINT/openai;
     }
 
     set $req_header "";
