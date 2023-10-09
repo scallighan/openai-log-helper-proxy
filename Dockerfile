@@ -1,7 +1,7 @@
 FROM python:3.12.0-bullseye
 #FROM openresty/openresty:focal
 
-RUN apt-get -y install --no-install-recommends wget gnupg ca-certificates gcc && \
+RUN apt-get update && apt-get -y install --no-install-recommends wget gnupg ca-certificates gcc gettext-base && \
     wget -O - https://openresty.org/package/pubkey.gpg | apt-key add - && \
     codename=`grep -Po 'VERSION="[0-9]+ \(\K[^)]+' /etc/os-release` && \
     echo "deb http://openresty.org/package/debian $codename openresty" \
@@ -22,7 +22,10 @@ RUN cd /opt/loghelper && pip install -r requirements.txt
 
 RUN wget https://raw.githubusercontent.com/openresty/docker-openresty/master/nginx.conf && \
     mv nginx.conf /usr/local/openresty/nginx/conf
-COPY default.conf /etc/nginx/conf.d/default.conf
+
+RUN mkdir -p /etc/nginx/conf.d
+RUN mkdir -p /etc/nginx/templates
+COPY default.conf.template /etc/nginx/templates
 
  
 

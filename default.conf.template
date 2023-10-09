@@ -11,7 +11,7 @@ server {
     
     location / {
        proxy_buffering off;
-       proxy_pass https://REPLACEME.openai.azure.com;
+       proxy_pass $OPENAI_ENDPOINT;
     }
 
     set $req_header "";

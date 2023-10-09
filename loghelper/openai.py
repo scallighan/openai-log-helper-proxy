@@ -4,7 +4,17 @@ import logging
 import tiktoken
 import re
 import json
+import asyncio
+from azure.eventhub import EventData
+from azure.eventhub.aio import EventHubProducerClient
 
+
+EVENT_HUB_CONNECTION_STR = os.environ.get("EVENT_HUB_CONNECTION_STR")
+EVENT_HUB_NAME = os.environ.get("EVENT_HUB_NAME")
+
+producer = EventHubProducerClient.from_connection_string(
+        conn_str=EVENT_HUB_CONNECTION_STR, eventhub_name=EVENT_HUB_NAME,
+    )
 
 logging.basicConfig(filename="/var/log/loghelper_openai.log",
     filemode='a',
@@ -107,6 +117,12 @@ def follow(f):
 
         yield line   
 
+async def send_to_event_hub(event: EventData):
+    logging.info("!!! send to event hub start !!!")
+    event_batch = await producer.create_batch()
+    event_batch.add(event)
+    await producer.send_batch(event_batch)
+    logging.info("!!! send to event hub complete !!!")
 
 def main():
     logfile = open("/var/log/nginx_access.log","r")
@@ -116,8 +132,12 @@ def main():
         try:
             line_split = line.split('" ||| "')
             logger.info("---")
+            # req headers
+            req_headers = parse_headers(line_split[1])
+            logger.info(req_headers)
             # resp headers
-            logger.info(parse_headers(line_split[2]))
+            resp_headers = parse_headers(line_split[2])
+            logger.info(resp_headers)
             logger.info("-")
             resp_body = parse_resp_body(line_split[3])
             resp_body_arr = []
@@ -131,7 +151,18 @@ def main():
                     logger.info(f"Because of: {e}")
             resp_body_content = "".join(resp_body_arr)
             logger.info(resp_body_content)
-            logger.info(f"Number of Tokens: {num_tokens_from_string(resp_body_content, 'cl100k_base')}")
+            num_tokens = num_tokens_from_string(resp_body_content, 'cl100k_base')
+            logger.info(f"Number of Tokens: {num_tokens}")
+            event = EventData(str({
+                "type": "openai-log-helper-proxy",
+                "req_headers": req_headers,
+                "resp_headers": resp_headers,
+                "body_content": resp_body_content,
+                "num_tokens": num_tokens,
+            }))
+            logger.info("---")
+            asyncio.run(send_to_event_hub(event))
+            logger.info(f"Event: {event}")
             logger.info("-------------------------")
         except Exception as e:
             logging.error(f"Error in tailing: {e}")
