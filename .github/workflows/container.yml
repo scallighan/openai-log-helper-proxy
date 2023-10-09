@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: TransactionsApi
+name: Container
 
 # Controls when the workflow will run
 on:
@@ -71,6 +71,9 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            latest
+            ${{ github.run_id }}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
