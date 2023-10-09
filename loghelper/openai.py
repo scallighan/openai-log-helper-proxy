@@ -79,26 +79,6 @@ def cleanup_json(d: dict) -> dict:
         else: 
             clean_dict[new_key] = v
     return clean_dict
-
-def main_tail():
-    logger.info("lets start the tail process...")
-    for line in tail('/var/log/nginx_access.log'):
-            line_split = line[0].split('" ||| "')
-            logger.info("---")
-            logger.info(parse_headers(line_split[2]))
-            logger.info("-")
-            resp_body = parse_resp_body(line_split[3])
-            resp_body_arr = []
-            logger.info(len(resp_body["data"]))
-            for d in resp_body["data"]:
-                try:
-                    if "choices" in d and len(d["choices"]) > 0 and "delta" in d["choices"][0] and "content" in d["choices"][0]["delta"]:
-                        resp_body_arr.append(d["choices"][0]["delta"]["content"])
-                except Exception as e:
-                    logger.info(f"Cannot logger.info content: {d}")
-                    logger.info(f"Because of: {e}")
-            logger.info("".join(resp_body_arr))
-            logger.info("-------------------------")
        
 # https://medium.com/@aliasav/how-follow-a-file-in-python-tail-f-in-python-bca026a901cf
 def follow(f):
