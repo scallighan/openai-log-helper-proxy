@@ -56,6 +56,20 @@ def parse_resp_body(resp_body: str) -> dict:
             resp_body_dict["data"].append(clean_j)
         except Exception as e:
             logger.info(f"NOT JSON: {m}")
+    if len(matches) == 0:
+        try:
+            #logging.info(f"Strip: {resp_body.strip()}")
+            #logging.info(f"strip encode/decode: {resp_body.strip().encode('utf-8').decode('unicode-escape')}")
+            #logging.info(f"encode/decode strip: {resp_body.encode('utf-8').decode('unicode-escape').strip()}")
+            logging.info(f"encode/decode strip splitlines: {resp_body.encode('utf-8').decode('unicode-escape').strip().splitlines()}")
+            j = json.loads(resp_body.encode('utf-8').decode('unicode-escape').strip().splitlines()[0])
+            logging.info("Hey it is json!")
+            logging.info(j)
+            clean_j = cleanup_json(j)
+            resp_body_dict["data"].append(clean_j)
+        except Exception as e:
+            logger.info(f"NOT JSON: {resp_body}")
+    logging.info(f"PARSE RESP BODY! {resp_body_dict}")
 
     return resp_body_dict
 
@@ -122,25 +136,30 @@ def main():
             resp_body = parse_resp_body(line_split[3])
             resp_body_arr = []
             logger.info(len(resp_body["data"]))
+            num_tokens = 0
             for d in resp_body["data"]:
                 try:
                     if "choices" in d and len(d["choices"]) > 0 and "delta" in d["choices"][0] and "content" in d["choices"][0]["delta"]:
                         resp_body_arr.append(d["choices"][0]["delta"]["content"])
+                    if "choices" in d and len(d["choices"]) > 0 and "message" in d["choices"][0] and "content" in d["choices"][0]["message"]:
+                        resp_body_arr.append(d["choices"][0]["message"]["content"])
+                        if "usage" in d and "completion_tokens" in d["usage"]:
+                            num_tokens = d['usage']['completion_tokens']
                 except Exception as e:
                     logger.info(f"Cannot logger.info content: {d}")
                     logger.info(f"Because of: {e}")
             resp_body_content = "".join(resp_body_arr)
             logger.info(resp_body_content)
-            num_tokens = num_tokens_from_string(resp_body_content, 'cl100k_base')
+            num_tokens = num_tokens_from_string(resp_body_content, 'cl100k_base') if num_tokens == 0 else num_tokens
             logger.info(f"Number of Tokens: {num_tokens}")
             if num_tokens > 0:
-                event = EventData(str({
+                event = EventData(json.dumps({
                     "Type": "openai-log-helper-proxy",
                     "req_headers": req_headers,
                     "resp_headers": resp_headers,
                     "body_content": resp_body_content,
                     "num_tokens": num_tokens,
-                }))
+                }).encode('utf-8'))
                 logger.info("---")
                 asyncio.run(send_to_event_hub(event))
                 logger.info(f"Event: {event}")
