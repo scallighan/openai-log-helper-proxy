@@ -10,3 +10,5 @@ Enter this project!
 ![diagram showing the log helper sitting behind an APIM instance and in front of openAI instance and sending data to event hub](images/log-helper-arch-overview.png)
 
 Underneath the covers this project utilizes [OpenResty](https://openresty.org/en/) to reverse proxy the OpenAI endpoint and log the response back to a file. Then there is a custom python app that tails the log and sends the information off to an Event Hub! 
+
+![diagram with a consumer calling the OpenResty proxy which logs to an access log and python helper tails the log and sends it to event hub](images/openai-log-helper-proxy.png)
