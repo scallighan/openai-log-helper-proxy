@@ -7,4 +7,6 @@ Unfortunately, when you try to do something with the response body in an APIM po
 
 Enter this project! 
 
+![diagram showing the log helper sitting behind an APIM instance and in front of openAI instance and sending data to event hub](images/log-helper-arch-overview.png)
+
 Underneath the covers this project utilizes [OpenResty](https://openresty.org/en/) to reverse proxy the OpenAI endpoint and log the response back to a file. Then there is a custom python app that tails the log and sends the information off to an Event Hub! 
